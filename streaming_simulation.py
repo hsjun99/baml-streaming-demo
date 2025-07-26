@@ -26,14 +26,16 @@ class StreamingData:
     """Simulates streaming user profile data"""
     name: Optional[str] = None
     email: Optional[str] = None
+    is_verified: Optional[bool] = None
     bio: Optional[str] = None
     age: Optional[int] = None
+    is_premium: Optional[bool] = None
     
     def has_required_fields(self) -> bool:
-        return self.name is not None and self.email is not None
+        return all([self.name is not None, self.email is not None, self.is_verified is not None])
     
     def has_all_fields(self) -> bool:
-        return all([self.name, self.email, self.bio, self.age])
+        return all([self.name, self.email, self.is_verified is not None, self.bio, self.age, self.is_premium is not None])
 
 @dataclass
 class StrategyResult:
@@ -60,8 +62,10 @@ class StreamingSimulation:
         field_updates = [
             FieldUpdate("name", "Dr. Sarah Michelle Chen", 0.8),      # Name arrives first
             FieldUpdate("email", "sarah.chen@university.edu", 1.2),  # Email arrives shortly after
-            FieldUpdate("bio", "Dr. Sarah Michelle Chen is a 35-year-old research scientist...", 2.8),  # Bio takes longer
-            FieldUpdate("age", "35", 3.5),  # Age arrives last
+            FieldUpdate("is_verified", True, 1.5),                   # Verification status arrives quickly
+            FieldUpdate("bio", "Dr. Sarah Michelle Chen is a 35-year-old research scientist...", 3.2),  # Bio takes longer
+            FieldUpdate("age", "35", 4.1),                          # Age arrives later
+            FieldUpdate("is_premium", True, 4.5),                   # Premium status arrives last
         ]
         
         # Track both strategies simultaneously
@@ -120,10 +124,12 @@ class StreamingSimulation:
         print("=" * 60)
         
         print(f"\n📋 FIELD ARRIVAL TIMELINE:")
-        print(f"  • Name:  0.8s")
-        print(f"  • Email: 1.2s ← Required fields complete")
-        print(f"  • Bio:   2.8s")  
-        print(f"  • Age:   3.5s ← All fields complete")
+        print(f"  • Name:       0.8s")
+        print(f"  • Email:      1.2s")
+        print(f"  • Verified:   1.5s ← Required fields complete")
+        print(f"  • Bio:        3.2s")  
+        print(f"  • Age:        4.1s")
+        print(f"  • Premium:    4.5s ← All fields complete")
         
         print(f"\n🎯 STRATEGY COMPARISON:")
         print(f"{'Metric':<25} {'Fast Strategy':<15} {'Full Strategy':<15} {'Difference':<15}")
@@ -145,7 +151,7 @@ class StreamingSimulation:
         print(f"  • User gets results {complete_diff:.1f}s sooner with fast transitions")
         
         # Check for parallelization benefit
-        fields_complete_time = 3.5  # When all fields finish
+        fields_complete_time = 4.5  # When all fields finish
         if fast_result.total_time < fields_complete_time:
             overlap = fields_complete_time - fast_result.total_time
             print(f"  • Next job completed {overlap:.1f}s BEFORE all fields finished! ⚡")

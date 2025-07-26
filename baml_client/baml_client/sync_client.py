@@ -92,11 +92,11 @@ class BamlSyncClient:
             "user_text": user_text,
         })
         return typing.cast(types.UserProfile, result.cast_to(types, types, stream_types, False, __runtime__))
-    def ProcessUser(self, name: str,email: str,
+    def ProcessUser(self, name: str,email: str,is_verified: bool,
         baml_options: BamlCallOptions = {},
     ) -> str:
         result = self.__options.merge_options(baml_options).call_function_sync(function_name="ProcessUser", args={
-            "name": name,"email": email,
+            "name": name,"email": email,"is_verified": is_verified,
         })
         return typing.cast(str, result.cast_to(types, types, stream_types, False, __runtime__))
     
@@ -120,11 +120,11 @@ class BamlStreamClient:
           lambda x: typing.cast(types.UserProfile, x.cast_to(types, types, stream_types, False, __runtime__)),
           ctx,
         )
-    def ProcessUser(self, name: str,email: str,
+    def ProcessUser(self, name: str,email: str,is_verified: bool,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.BamlSyncStream[str, str]:
         ctx, result = self.__options.merge_options(baml_options).create_sync_stream(function_name="ProcessUser", args={
-            "name": name,"email": email,
+            "name": name,"email": email,"is_verified": is_verified,
         })
         return baml_py.BamlSyncStream[str, str](
           result,
@@ -147,11 +147,11 @@ class BamlHttpRequestClient:
             "user_text": user_text,
         }, mode="request")
         return result
-    def ProcessUser(self, name: str,email: str,
+    def ProcessUser(self, name: str,email: str,is_verified: bool,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.baml_py.HTTPRequest:
         result = self.__options.merge_options(baml_options).create_http_request_sync(function_name="ProcessUser", args={
-            "name": name,"email": email,
+            "name": name,"email": email,"is_verified": is_verified,
         }, mode="request")
         return result
     
@@ -169,11 +169,11 @@ class BamlHttpStreamRequestClient:
             "user_text": user_text,
         }, mode="stream")
         return result
-    def ProcessUser(self, name: str,email: str,
+    def ProcessUser(self, name: str,email: str,is_verified: bool,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.baml_py.HTTPRequest:
         result = self.__options.merge_options(baml_options).create_http_request_sync(function_name="ProcessUser", args={
-            "name": name,"email": email,
+            "name": name,"email": email,"is_verified": is_verified,
         }, mode="stream")
         return result
     
