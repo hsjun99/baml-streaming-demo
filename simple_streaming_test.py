@@ -44,6 +44,7 @@ async def demo_baml_streaming_with_fast_transitions():
     partial_count = 0
     required_fields = ["name", "email"]  # Simplified required fields
     fast_transition_triggered = False
+    fast_transition_time = None
     
     print("📡 Starting stream processing...")
     
@@ -96,7 +97,9 @@ async def demo_baml_streaming_with_fast_transitions():
                 
                 if required_ready:
                     fast_transition_triggered = True
+                    fast_transition_time = elapsed
                     print(f"\n🚀 Fast transition at {elapsed:.3f}s!")
+                    print(f"   ⏱️ Necessary fields ready after {elapsed:.3f}s")
                     
                     # Extract values for ProcessUser
                     name_val = field_states["name"][0]
@@ -124,6 +127,13 @@ async def demo_baml_streaming_with_fast_transitions():
         print(f"\n" + "=" * 50)
         print(f"✅ Final result after {total_time:.3f}s")
         print(f"📊 Received {partial_count} partial updates")
+        
+        # Show timing comparison
+        if fast_transition_time is not None:
+            time_diff = total_time - fast_transition_time
+            print(f"⏱️ Time difference: Necessary fields ready at {fast_transition_time:.3f}s")
+            print(f"   Final result completed at {total_time:.3f}s")
+            print(f"   Additional streaming time: {time_diff:.3f}s ({time_diff/total_time*100:.1f}% of total)")
         
         print(f"\n📋 Final Profile:")
         print(f"   Name: {final_profile.name}")
