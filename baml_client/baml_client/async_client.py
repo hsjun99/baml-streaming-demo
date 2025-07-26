@@ -73,25 +73,18 @@ class BamlAsyncClient:
     def parse_stream(self):
       return self.__llm_stream_parser
     
-    async def AnalyzeEmployeeProfile(self, profile: types.EmployeeProfile,
+    async def ExtractUserProfile(self, user_text: str,
+        baml_options: BamlCallOptions = {},
+    ) -> types.UserProfile:
+        result = await self.__options.merge_options(baml_options).call_function_async(function_name="ExtractUserProfile", args={
+            "user_text": user_text,
+        })
+        return typing.cast(types.UserProfile, result.cast_to(types, types, stream_types, False, __runtime__))
+    async def ProcessUser(self, name: str,email: str,
         baml_options: BamlCallOptions = {},
     ) -> str:
-        result = await self.__options.merge_options(baml_options).call_function_async(function_name="AnalyzeEmployeeProfile", args={
-            "profile": profile,
-        })
-        return typing.cast(str, result.cast_to(types, types, stream_types, False, __runtime__))
-    async def ExtractEmployeeProfile(self, resume_text: str,
-        baml_options: BamlCallOptions = {},
-    ) -> types.EmployeeProfile:
-        result = await self.__options.merge_options(baml_options).call_function_async(function_name="ExtractEmployeeProfile", args={
-            "resume_text": resume_text,
-        })
-        return typing.cast(types.EmployeeProfile, result.cast_to(types, types, stream_types, False, __runtime__))
-    async def InitiateEmployeeOnboarding(self, employee_id: str,full_name: str,email: str,department: types.Department,job_title: str,
-        baml_options: BamlCallOptions = {},
-    ) -> str:
-        result = await self.__options.merge_options(baml_options).call_function_async(function_name="InitiateEmployeeOnboarding", args={
-            "employee_id": employee_id,"full_name": full_name,"email": email,"department": department,"job_title": job_title,
+        result = await self.__options.merge_options(baml_options).call_function_async(function_name="ProcessUser", args={
+            "name": name,"email": email,
         })
         return typing.cast(str, result.cast_to(types, types, stream_types, False, __runtime__))
     
@@ -103,35 +96,23 @@ class BamlStreamClient:
     def __init__(self, options: DoNotUseDirectlyCallManager):
         self.__options = options
 
-    def AnalyzeEmployeeProfile(self, profile: types.EmployeeProfile,
+    def ExtractUserProfile(self, user_text: str,
         baml_options: BamlCallOptions = {},
-    ) -> baml_py.BamlStream[str, str]:
-        ctx, result = self.__options.merge_options(baml_options).create_async_stream(function_name="AnalyzeEmployeeProfile", args={
-            "profile": profile,
+    ) -> baml_py.BamlStream[stream_types.UserProfile, types.UserProfile]:
+        ctx, result = self.__options.merge_options(baml_options).create_async_stream(function_name="ExtractUserProfile", args={
+            "user_text": user_text,
         })
-        return baml_py.BamlStream[str, str](
+        return baml_py.BamlStream[stream_types.UserProfile, types.UserProfile](
           result,
-          lambda x: typing.cast(str, x.cast_to(types, types, stream_types, True, __runtime__)),
-          lambda x: typing.cast(str, x.cast_to(types, types, stream_types, False, __runtime__)),
+          lambda x: typing.cast(stream_types.UserProfile, x.cast_to(types, types, stream_types, True, __runtime__)),
+          lambda x: typing.cast(types.UserProfile, x.cast_to(types, types, stream_types, False, __runtime__)),
           ctx,
         )
-    def ExtractEmployeeProfile(self, resume_text: str,
-        baml_options: BamlCallOptions = {},
-    ) -> baml_py.BamlStream[stream_types.EmployeeProfile, types.EmployeeProfile]:
-        ctx, result = self.__options.merge_options(baml_options).create_async_stream(function_name="ExtractEmployeeProfile", args={
-            "resume_text": resume_text,
-        })
-        return baml_py.BamlStream[stream_types.EmployeeProfile, types.EmployeeProfile](
-          result,
-          lambda x: typing.cast(stream_types.EmployeeProfile, x.cast_to(types, types, stream_types, True, __runtime__)),
-          lambda x: typing.cast(types.EmployeeProfile, x.cast_to(types, types, stream_types, False, __runtime__)),
-          ctx,
-        )
-    def InitiateEmployeeOnboarding(self, employee_id: str,full_name: str,email: str,department: types.Department,job_title: str,
+    def ProcessUser(self, name: str,email: str,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.BamlStream[str, str]:
-        ctx, result = self.__options.merge_options(baml_options).create_async_stream(function_name="InitiateEmployeeOnboarding", args={
-            "employee_id": employee_id,"full_name": full_name,"email": email,"department": department,"job_title": job_title,
+        ctx, result = self.__options.merge_options(baml_options).create_async_stream(function_name="ProcessUser", args={
+            "name": name,"email": email,
         })
         return baml_py.BamlStream[str, str](
           result,
@@ -147,25 +128,18 @@ class BamlHttpRequestClient:
     def __init__(self, options: DoNotUseDirectlyCallManager):
         self.__options = options
 
-    async def AnalyzeEmployeeProfile(self, profile: types.EmployeeProfile,
+    async def ExtractUserProfile(self, user_text: str,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.baml_py.HTTPRequest:
-        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="AnalyzeEmployeeProfile", args={
-            "profile": profile,
+        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="ExtractUserProfile", args={
+            "user_text": user_text,
         }, mode="request")
         return result
-    async def ExtractEmployeeProfile(self, resume_text: str,
+    async def ProcessUser(self, name: str,email: str,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.baml_py.HTTPRequest:
-        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="ExtractEmployeeProfile", args={
-            "resume_text": resume_text,
-        }, mode="request")
-        return result
-    async def InitiateEmployeeOnboarding(self, employee_id: str,full_name: str,email: str,department: types.Department,job_title: str,
-        baml_options: BamlCallOptions = {},
-    ) -> baml_py.baml_py.HTTPRequest:
-        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="InitiateEmployeeOnboarding", args={
-            "employee_id": employee_id,"full_name": full_name,"email": email,"department": department,"job_title": job_title,
+        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="ProcessUser", args={
+            "name": name,"email": email,
         }, mode="request")
         return result
     
@@ -176,25 +150,18 @@ class BamlHttpStreamRequestClient:
     def __init__(self, options: DoNotUseDirectlyCallManager):
         self.__options = options
 
-    async def AnalyzeEmployeeProfile(self, profile: types.EmployeeProfile,
+    async def ExtractUserProfile(self, user_text: str,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.baml_py.HTTPRequest:
-        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="AnalyzeEmployeeProfile", args={
-            "profile": profile,
+        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="ExtractUserProfile", args={
+            "user_text": user_text,
         }, mode="stream")
         return result
-    async def ExtractEmployeeProfile(self, resume_text: str,
+    async def ProcessUser(self, name: str,email: str,
         baml_options: BamlCallOptions = {},
     ) -> baml_py.baml_py.HTTPRequest:
-        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="ExtractEmployeeProfile", args={
-            "resume_text": resume_text,
-        }, mode="stream")
-        return result
-    async def InitiateEmployeeOnboarding(self, employee_id: str,full_name: str,email: str,department: types.Department,job_title: str,
-        baml_options: BamlCallOptions = {},
-    ) -> baml_py.baml_py.HTTPRequest:
-        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="InitiateEmployeeOnboarding", args={
-            "employee_id": employee_id,"full_name": full_name,"email": email,"department": department,"job_title": job_title,
+        result = await self.__options.merge_options(baml_options).create_http_request_async(function_name="ProcessUser", args={
+            "name": name,"email": email,
         }, mode="stream")
         return result
     

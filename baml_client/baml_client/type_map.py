@@ -16,42 +16,8 @@ from . import stream_types
 
 type_map = {
 
-    "types.Certification": types.Certification,
-    "stream_types.Certification": stream_types.Certification,
+    "types.UserProfile": types.UserProfile,
+    "stream_types.UserProfile": stream_types.UserProfile,
 
-    "types.Company": types.Company,
-    "stream_types.Company": stream_types.Company,
-
-    "types.CompensationDetails": types.CompensationDetails,
-    "stream_types.CompensationDetails": stream_types.CompensationDetails,
-
-    "types.Education": types.Education,
-    "stream_types.Education": stream_types.Education,
-
-    "types.EmergencyContact": types.EmergencyContact,
-    "stream_types.EmergencyContact": stream_types.EmergencyContact,
-
-    "types.EmployeeProfile": types.EmployeeProfile,
-    "stream_types.EmployeeProfile": stream_types.EmployeeProfile,
-
-    "types.PerformanceReview": types.PerformanceReview,
-    "stream_types.PerformanceReview": stream_types.PerformanceReview,
-
-    "types.Project": types.Project,
-    "stream_types.Project": stream_types.Project,
-
-    "types.Skill": types.Skill,
-    "stream_types.Skill": stream_types.Skill,
-
-
-    "types.Department": types.Department,
-
-    "types.EducationLevel": types.EducationLevel,
-
-    "types.ProjectStatus": types.ProjectStatus,
-
-    "types.ReviewRating": types.ReviewRating,
-
-    "types.SkillLevel": types.SkillLevel,
 
 }

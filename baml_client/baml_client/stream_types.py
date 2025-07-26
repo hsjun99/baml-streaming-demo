@@ -23,111 +23,14 @@ class StreamState(BaseModel, typing.Generic[StreamStateValueT]):
     value: StreamStateValueT
     state: typing_extensions.Literal["Pending", "Incomplete", "Complete"]
 # #########################################################################
-# Generated classes (9)
+# Generated classes (1)
 # #########################################################################
 
-class Certification(BaseModel):
-    name: typing.Optional[str] = None
-    issuing_organization: typing.Optional[str] = None
-    issue_date: typing.Optional[str] = None
-    expiry_date: typing.Optional[str] = None
-    credential_id: typing.Optional[str] = None
-    is_active: typing.Optional[bool] = None
-
-class Company(BaseModel):
-    name: typing.Optional[str] = None
-    industry: typing.Optional[str] = None
-    size_employees: typing.Optional[int] = None
-    headquarters_location: typing.Optional[str] = None
-    stock_symbol: typing.Optional[str] = None
-
-class CompensationDetails(BaseModel):
-    base_salary_usd: typing.Optional[float] = None
-    bonus_percentage: typing.Optional[float] = None
-    equity_shares: typing.Optional[int] = None
-    benefits_value_usd: typing.Optional[float] = None
-    total_compensation_usd: typing.Optional[float] = None
-
-class Education(BaseModel):
-    institution: typing.Optional[str] = None
-    degree: typing.Optional[str] = None
-    field_of_study: typing.Optional[str] = None
-    level: typing.Optional[types.EducationLevel] = None
-    graduation_year: typing.Optional[int] = None
-    gpa: typing.Optional[float] = None
-    honors: typing.Optional[str] = None
-
-class EmergencyContact(BaseModel):
-    name: typing.Optional[str] = None
-    relationship: typing.Optional[str] = None
-    phone: typing.Optional[str] = None
-    email: typing.Optional[str] = None
-    address: typing.Optional[str] = None
-
-class EmployeeProfile(BaseModel):
-    employee_id: StreamState[str]
-    full_name: StreamState[str]
+class UserProfile(BaseModel):
+    name: StreamState[str]
     email: StreamState[str]
-    department: StreamState[types.Department]
-    job_title: StreamState[str]
-    hire_date: StreamState[typing.Optional[str]]
-    employment_status: StreamState[typing.Optional[str]]
-    manager_name: StreamState[typing.Optional[str]]
-    office_location: StreamState[typing.Optional[str]]
-    is_remote: StreamState[typing.Optional[bool]]
-    phone: StreamState[typing.Optional[str]]
-    date_of_birth: StreamState[typing.Optional[str]]
-    address: StreamState[typing.Optional[str]]
-    nationality: StreamState[typing.Optional[str]]
-    languages_spoken: StreamState[typing.List[str]]
-    company: StreamState[typing.Optional["Company"]]
-    skills: StreamState[typing.List["Skill"]]
-    certifications: StreamState[typing.List["Certification"]]
-    project_history: StreamState[typing.List["Project"]]
-    performance_reviews: StreamState[typing.List["PerformanceReview"]]
-    education_background: StreamState[typing.List["Education"]]
-    emergency_contacts: StreamState[typing.List["EmergencyContact"]]
-    compensation: StreamState[typing.Optional["CompensationDetails"]]
-    security_clearance_level: StreamState[typing.Optional[str]]
-    visa_status: StreamState[typing.Optional[str]]
-    professional_summary: StreamState[typing.Optional[str]]
-    career_goals: StreamState[typing.Optional[str]]
-    years_total_experience: StreamState[typing.Optional[int]]
-    previous_companies: StreamState[typing.List[str]]
-    is_senior_level: StreamState[typing.Optional[bool]]
-    performance_score: StreamState[typing.Optional[float]]
-    skill_diversity_score: StreamState[typing.Optional[float]]
-    promotion_eligible: StreamState[typing.Optional[bool]]
-
-class PerformanceReview(BaseModel):
-    review_period: typing.Optional[str] = None
-    overall_rating: typing.Optional[types.ReviewRating] = None
-    goals_met_percentage: typing.Optional[float] = None
-    strengths: typing.List[str]
-    areas_for_improvement: typing.List[str]
-    manager_feedback: typing.Optional[str] = None
-    career_development_plan: typing.Optional[str] = None
-    salary_change_percentage: typing.Optional[float] = None
-
-class Project(BaseModel):
-    name: typing.Optional[str] = None
-    description: typing.Optional[str] = None
-    status: typing.Optional[types.ProjectStatus] = None
-    start_date: typing.Optional[str] = None
-    end_date: typing.Optional[str] = None
-    budget_usd: typing.Optional[float] = None
-    team_size: typing.Optional[int] = None
-    role_in_project: typing.Optional[str] = None
-    technologies_used: typing.List[str]
-    key_achievements: typing.List[str]
-
-class Skill(BaseModel):
-    name: typing.Optional[str] = None
-    category: typing.Optional[str] = None
-    level: typing.Optional[types.SkillLevel] = None
-    years_experience: typing.Optional[int] = None
-    last_used_year: typing.Optional[int] = None
-    certified: typing.Optional[bool] = None
+    bio: StreamState[typing.Optional[str]]
+    age: StreamState[typing.Optional[int]]
 
 # #########################################################################
 # Generated type aliases (0)

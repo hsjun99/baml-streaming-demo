@@ -37,153 +37,18 @@ def get_checks(checks: typing.Dict[CheckName, Check]) -> typing.List[Check]:
 def all_succeeded(checks: typing.Dict[CheckName, Check]) -> bool:
     return all(check.status == "succeeded" for check in get_checks(checks))
 # #########################################################################
-# Generated enums (5)
+# Generated enums (0)
 # #########################################################################
 
-class Department(str, Enum):
-    ENGINEERING = "ENGINEERING"
-    MARKETING = "MARKETING"
-    SALES = "SALES"
-    HR = "HR"
-    FINANCE = "FINANCE"
-    OPERATIONS = "OPERATIONS"
-    LEGAL = "LEGAL"
-    DESIGN = "DESIGN"
-    PRODUCT = "PRODUCT"
-
-class EducationLevel(str, Enum):
-    HIGH_SCHOOL = "HIGH_SCHOOL"
-    ASSOCIATES = "ASSOCIATES"
-    BACHELORS = "BACHELORS"
-    MASTERS = "MASTERS"
-    PHD = "PHD"
-    CERTIFICATE = "CERTIFICATE"
-
-class ProjectStatus(str, Enum):
-    PLANNING = "PLANNING"
-    IN_PROGRESS = "IN_PROGRESS"
-    COMPLETED = "COMPLETED"
-    ON_HOLD = "ON_HOLD"
-    CANCELLED = "CANCELLED"
-
-class ReviewRating(str, Enum):
-    EXCEEDS_EXPECTATIONS = "EXCEEDS_EXPECTATIONS"
-    MEETS_EXPECTATIONS = "MEETS_EXPECTATIONS"
-    BELOW_EXPECTATIONS = "BELOW_EXPECTATIONS"
-    NEEDS_IMPROVEMENT = "NEEDS_IMPROVEMENT"
-
-class SkillLevel(str, Enum):
-    BEGINNER = "BEGINNER"
-    INTERMEDIATE = "INTERMEDIATE"
-    ADVANCED = "ADVANCED"
-    EXPERT = "EXPERT"
-
 # #########################################################################
-# Generated classes (9)
+# Generated classes (1)
 # #########################################################################
 
-class Certification(BaseModel):
+class UserProfile(BaseModel):
     name: str
-    issuing_organization: str
-    issue_date: str
-    expiry_date: typing.Optional[str] = None
-    credential_id: typing.Optional[str] = None
-    is_active: bool
-
-class Company(BaseModel):
-    name: str
-    industry: str
-    size_employees: int
-    headquarters_location: str
-    stock_symbol: typing.Optional[str] = None
-
-class CompensationDetails(BaseModel):
-    base_salary_usd: float
-    bonus_percentage: typing.Optional[float] = None
-    equity_shares: typing.Optional[int] = None
-    benefits_value_usd: typing.Optional[float] = None
-    total_compensation_usd: float
-
-class Education(BaseModel):
-    institution: str
-    degree: str
-    field_of_study: str
-    level: EducationLevel
-    graduation_year: int
-    gpa: typing.Optional[float] = None
-    honors: typing.Optional[str] = None
-
-class EmergencyContact(BaseModel):
-    name: str
-    relationship: str
-    phone: str
-    email: typing.Optional[str] = None
-    address: typing.Optional[str] = None
-
-class EmployeeProfile(BaseModel):
-    employee_id: str
-    full_name: str
     email: str
-    department: Department
-    job_title: str
-    hire_date: str
-    employment_status: str
-    manager_name: str
-    office_location: str
-    is_remote: bool
-    phone: str
-    date_of_birth: str
-    address: str
-    nationality: str
-    languages_spoken: typing.List[str]
-    company: "Company"
-    skills: typing.List["Skill"]
-    certifications: typing.List["Certification"]
-    project_history: typing.List["Project"]
-    performance_reviews: typing.List["PerformanceReview"]
-    education_background: typing.List["Education"]
-    emergency_contacts: typing.List["EmergencyContact"]
-    compensation: "CompensationDetails"
-    security_clearance_level: typing.Optional[str] = None
-    visa_status: typing.Optional[str] = None
-    professional_summary: str
-    career_goals: str
-    years_total_experience: int
-    previous_companies: typing.List[str]
-    is_senior_level: bool
-    performance_score: float
-    skill_diversity_score: float
-    promotion_eligible: bool
-
-class PerformanceReview(BaseModel):
-    review_period: str
-    overall_rating: ReviewRating
-    goals_met_percentage: float
-    strengths: typing.List[str]
-    areas_for_improvement: typing.List[str]
-    manager_feedback: str
-    career_development_plan: typing.Optional[str] = None
-    salary_change_percentage: typing.Optional[float] = None
-
-class Project(BaseModel):
-    name: str
-    description: str
-    status: ProjectStatus
-    start_date: str
-    end_date: typing.Optional[str] = None
-    budget_usd: typing.Optional[float] = None
-    team_size: int
-    role_in_project: str
-    technologies_used: typing.List[str]
-    key_achievements: typing.List[str]
-
-class Skill(BaseModel):
-    name: str
-    category: str
-    level: SkillLevel
-    years_experience: int
-    last_used_year: typing.Optional[int] = None
-    certified: bool
+    bio: str
+    age: int
 
 # #########################################################################
 # Generated type aliases (0)
