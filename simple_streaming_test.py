@@ -4,9 +4,10 @@ BAML Streaming with Fast Transitions
 ====================================
 
 Demonstrates real BAML streaming with fast transitions:
-- Progressive field streaming (Pending → Incomplete → Complete)
+- Progressive field streaming with plain field values
 - Event-driven processing with `async for partial in stream:`
 - Fast transitions when required fields are ready
+- Simple state tracking (none → Complete)
 - Parallel processing while remaining fields continue streaming
 """
 
@@ -63,21 +64,18 @@ async def demo_baml_streaming_with_fast_transitions():
             for field_name in fields:
                 field_obj = getattr(partial_profile, field_name, None)
                 
-                # Extract value and state
+                # Extract value and state (all fields are now plain values)
                 if field_obj is None:
                     value, state = None, "none"
-                elif hasattr(field_obj, 'state') and hasattr(field_obj, 'value'):
-                    # StreamState object
-                    value, state = field_obj.value, field_obj.state
                 else:
-                    # Plain value
+                    # Plain value - field is complete when it appears
                     value, state = field_obj, "Complete"
                 
                 field_states[field_name] = (value, state)
                 
                 # Display field
                 marker = "⭐" if field_name in required_fields else "  "
-                emoji = "✅" if state == "Complete" else "⏳" if state == "Incomplete" else "⏸️"
+                emoji = "✅" if state == "Complete" else "⏸️"
                 
                 if value is None:
                     value_str = "[None]"
