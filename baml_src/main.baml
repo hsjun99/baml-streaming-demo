@@ -8,9 +8,9 @@ generator PythonClient {
 // Simple User Profile for streaming demo
 class UserProfile {
   // Critical fields needed for next job execution (3 required)
-  name string @stream.not_null
-  email string @stream.not_null
-  is_verified bool
+  name string @stream.not_null @stream.done
+  email string @stream.not_null @stream.done
+  is_verified bool @stream.done
   
   // Optional fields that can stream with state information
   bio string
