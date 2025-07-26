@@ -59,7 +59,7 @@ async def track_stream(
     *,
     show_progress: bool = True,
     on_required_ready=None,
-    on_all_complete=None
+    on_all_ready=None
 ) -> AsyncGenerator[StreamState, None]:
     """
     The one obvious way to track BAML streams.
@@ -78,7 +78,7 @@ async def track_stream(
         async for state in track_stream(
             stream, UserProfile,
             on_required_ready=lambda fields: process_user(fields),
-            on_all_complete=lambda fields: finalize_user(fields)
+            on_all_ready=lambda fields: finalize_user(fields)
         ):
     """
     # Simple setup - no complex initialization
@@ -109,8 +109,8 @@ async def track_stream(
         all_complete_triggered = all_complete and not all_complete_notified
         if all_complete_triggered:
             all_complete_notified = True
-            if on_all_complete:
-                await on_all_complete(current_fields)
+            if on_all_ready:
+                await on_all_ready(current_fields)
         
         # Yield simple state - let the caller decide what to do
         state = StreamState(
@@ -150,7 +150,7 @@ def format_progress(state: StreamState, required_fields: Set[str]) -> str:
 
 
 # Convenience function for common use case
-async def simple_track(stream, schema_class: Type[BaseModel], on_required_ready=None, on_all_complete=None):
+async def simple_track(stream, schema_class: Type[BaseModel], on_required_ready=None, on_all_ready=None):
     """
     Even simpler API for the most common use case.
     Returns final statistics.
@@ -168,8 +168,8 @@ async def simple_track(stream, schema_class: Type[BaseModel], on_required_ready=
         
         if state.all_complete:
             stats["all_complete_time"] = state.elapsed
-            if on_all_complete:
-                await on_all_complete(state.fields)
+            if on_all_ready:
+                await on_all_ready(state.fields)
     
     # Calculate time savings
     if stats["required_ready_time"]:

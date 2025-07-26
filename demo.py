@@ -90,7 +90,7 @@ async def demo_simple_api():
         except Exception as e:
             print(f"   ❌ Error: {e}")
     
-    async def finalize_when_complete(fields):
+    async def finalize_when_ready(fields):
         age = fields.get('age')
         premium = fields.get('is_premium')
         print(f"   🎉 Profile complete! Age: {age}, Premium: {premium}")
@@ -101,7 +101,7 @@ async def demo_simple_api():
     stats = await simple_track(
         stream, UserProfile, 
         on_required_ready=process_when_ready,
-        on_all_complete=finalize_when_complete
+        on_all_ready=finalize_when_ready
     )
     
     print("✨ Demo 2 completed!")
