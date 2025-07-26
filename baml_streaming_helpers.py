@@ -53,88 +53,52 @@ class FieldConfig:
         return self.display_name or self.name
 
 
-# Transition System
-# =================
+# Required Field System
+# =====================
 
-class TransitionCondition(ABC):
-    """Abstract base class for defining when transitions should trigger"""
-    
-    @abstractmethod
-    def is_satisfied(self, field_states: Dict[str, FieldState]) -> bool:
-        """Check if this transition condition is satisfied"""
-        pass
-    
-    @abstractmethod
-    def describe(self) -> str:
-        """Human-readable description of this condition"""
-        pass
-
-
-class RequiredFieldsComplete(TransitionCondition):
-    """Triggers when all specified required fields are complete"""
+class RequiredFieldsChecker:
+    """Manages checking when required fields are ready"""
     
     def __init__(self, required_fields: List[str]):
         self.required_fields = required_fields
+        self.required_ready_triggered = False
+        self.all_complete_triggered = False
     
-    def is_satisfied(self, field_states: Dict[str, FieldState]) -> bool:
-        return all(
+    def check_required_ready(self, field_states: Dict[str, FieldState]) -> bool:
+        """Check if required fields are ready (and not already triggered)"""
+        if self.required_ready_triggered:
+            return False
+            
+        required_ready = all(
             field_states.get(field_name, FieldState(field_name, None, FieldStatus.NONE, 0)).status == FieldStatus.COMPLETE
             for field_name in self.required_fields
         )
+        
+        if required_ready:
+            self.required_ready_triggered = True
+            return True
+        return False
     
-    def describe(self) -> str:
-        return f"Required fields complete: {', '.join(self.required_fields)}"
-
-
-class AllFieldsComplete(TransitionCondition):
-    """Triggers when all fields are complete"""
-    
-    def is_satisfied(self, field_states: Dict[str, FieldState]) -> bool:
-        return all(state.status == FieldStatus.COMPLETE for state in field_states.values())
-    
-    def describe(self) -> str:
-        return "All fields complete"
-
-
-class CustomCondition(TransitionCondition):
-    """Triggers based on a custom function"""
-    
-    def __init__(self, condition_func: Callable[[Dict[str, FieldState]], bool], description: str = "Custom condition"):
-        self.condition_func = condition_func
-        self.description = description
-    
-    def is_satisfied(self, field_states: Dict[str, FieldState]) -> bool:
-        return self.condition_func(field_states)
-    
-    def describe(self) -> str:
-        return self.description
-
-
-class TransitionManager:
-    """Manages multiple transition conditions and tracks which have been triggered"""
-    
-    def __init__(self, conditions: List[TransitionCondition]):
-        self.conditions = conditions
-        self.triggered = {i: False for i in range(len(conditions))}
-    
-    def check_transitions(self, field_states: Dict[str, FieldState]) -> List[int]:
-        """Check all conditions and return indices of newly triggered transitions"""
-        newly_triggered = []
-        for i, condition in enumerate(self.conditions):
-            if not self.triggered[i] and condition.is_satisfied(field_states):
-                self.triggered[i] = True
-                newly_triggered.append(i)
-        return newly_triggered
-    
-    def get_condition_description(self, index: int) -> str:
-        """Get description of condition at given index"""
-        if 0 <= index < len(self.conditions):
-            return self.conditions[index].describe()
-        return f"Unknown condition {index}"
+    def check_all_complete(self, field_states: Dict[str, FieldState]) -> bool:
+        """Check if all fields are complete (and not already triggered)"""
+        if self.all_complete_triggered:
+            return False
+            
+        all_complete = all(state.status == FieldStatus.COMPLETE for state in field_states.values())
+        
+        if all_complete:
+            self.all_complete_triggered = True
+            return True
+        return False
     
     def reset(self):
         """Reset all triggered states"""
-        self.triggered = {i: False for i in range(len(self.conditions))}
+        self.required_ready_triggered = False
+        self.all_complete_triggered = False
+    
+    def get_required_fields_description(self) -> str:
+        """Get description of required fields"""
+        return f"Required fields: {', '.join(self.required_fields)}"
 
 
 # Display and Formatting
@@ -176,11 +140,16 @@ class StreamDisplayFormatter:
         """Format header for each partial update"""
         return f"\n📊 Partial #{partial_count} at {elapsed_time:.3f}s:"
     
-    def format_transition_trigger(self, condition_desc: str, elapsed_time: float) -> str:
-        """Format transition trigger message"""
+    def format_required_ready(self, required_fields: List[str], elapsed_time: float) -> str:
+        """Format required fields ready message"""
         return f"""
-🚀 Transition triggered at {elapsed_time:.3f}s!
-   ⏱️ Condition: {condition_desc}"""
+🚀 Required fields ready at {elapsed_time:.3f}s!
+   ⏱️ Fields: {', '.join(required_fields)}"""
+    
+    def format_all_complete(self, elapsed_time: float) -> str:
+        """Format all fields complete message"""
+        return f"""
+✅ All fields complete at {elapsed_time:.3f}s!"""
 
 
 # Performance Tracking
@@ -218,14 +187,14 @@ class PerformanceSummary:
     total_time: float
     partial_count: int
     events: Dict[str, float]
-    fast_transition_time: Optional[float] = None
+    required_ready_time: Optional[float] = None
     
     @property
     def time_savings_percent(self) -> Optional[float]:
-        """Calculate time savings percentage if fast transition occurred"""
-        if self.fast_transition_time is None:
+        """Calculate time savings percentage if required fields triggered early"""
+        if self.required_ready_time is None:
             return None
-        return (self.total_time - self.fast_transition_time) / self.total_time * 100
+        return (self.total_time - self.required_ready_time) / self.total_time * 100
     
     def format_summary(self) -> str:
         """Format performance summary for display"""
@@ -235,10 +204,10 @@ class PerformanceSummary:
             f"📊 Received {self.partial_count} partial updates"
         ]
         
-        if self.fast_transition_time is not None:
+        if self.required_ready_time is not None:
             savings = self.time_savings_percent
             lines.extend([
-                f"⏱️ Fast transition at {self.fast_transition_time:.3f}s",
+                f"⏱️ Required fields ready at {self.required_ready_time:.3f}s",
                 f"   Time savings: {savings:.1f}% of total execution"
             ])
         
@@ -254,31 +223,30 @@ class BAMLStreamProcessor:
     def __init__(
         self,
         field_configs: Dict[str, FieldConfig],
-        transitions: List[TransitionCondition],
         formatter: Optional[StreamDisplayFormatter] = None,
         timer: Optional[StreamTimer] = None,
         title: str = "BAML Streaming"
     ):
         self.field_configs = field_configs
-        self.transition_manager = TransitionManager(transitions)
         self.formatter = formatter or StreamDisplayFormatter()
         self.timer = timer or StreamTimer()
         self.title = title
         
         # Derived properties
-        self.required_fields = {name for name, config in field_configs.items() if config.required}
+        self.required_fields = [name for name, config in field_configs.items() if config.required]
+        self.required_checker = RequiredFieldsChecker(self.required_fields)
     
     async def process_stream(
         self,
         stream,
-        transition_handlers: Optional[Dict[int, Callable[[Dict[str, FieldState], float], Any]]] = None
+        on_required_ready: Optional[Callable[[Dict[str, FieldState], float], Any]] = None,
+        on_all_complete: Optional[Callable[[Dict[str, FieldState], float], Any]] = None
     ) -> PerformanceSummary:
         """Process a BAML stream with the configured behavior"""
-        transition_handlers = transition_handlers or {}
         partial_count = 0
         
         # Reset state
-        self.transition_manager.reset()
+        self.required_checker.reset()
         self.timer.reset()
         
         # Display header
@@ -297,18 +265,21 @@ class BAMLStreamProcessor:
                 # Extract field states
                 field_states = self._extract_all_field_states(partial)
                 
-                # Check for transitions
-                triggered_transitions = self.transition_manager.check_transitions(field_states)
+                # Check if required fields are ready
+                if self.required_checker.check_required_ready(field_states):
+                    self.timer.mark_event("required_ready")
+                    print(self.formatter.format_required_ready(self.required_fields, elapsed))
+                    
+                    if on_required_ready:
+                        await on_required_ready(field_states, elapsed)
                 
-                # Handle transitions
-                for transition_idx in triggered_transitions:
-                    condition_desc = self.transition_manager.get_condition_description(transition_idx)
-                    self.timer.mark_event(f"transition_{transition_idx}")
+                # Check if all fields are complete
+                if self.required_checker.check_all_complete(field_states):
+                    self.timer.mark_event("all_complete")
+                    print(self.formatter.format_all_complete(elapsed))
                     
-                    print(self.formatter.format_transition_trigger(condition_desc, elapsed))
-                    
-                    if transition_idx in transition_handlers:
-                        await transition_handlers[transition_idx](field_states, elapsed)
+                    if on_all_complete:
+                        await on_all_complete(field_states, elapsed)
                 
                 # Display current state
                 self._display_partial_update(partial_count, elapsed, field_states)
@@ -323,12 +294,12 @@ class BAMLStreamProcessor:
             total_time = self.timer.get_elapsed()
             
             # Generate performance summary
-            fast_transition_time = self.timer.get_event_time("transition_0")  # First transition
+            required_ready_time = self.timer.get_event_time("required_ready")
             summary = PerformanceSummary(
                 total_time=total_time,
                 partial_count=partial_count,
                 events=self.timer.events.copy(),
-                fast_transition_time=fast_transition_time
+                required_ready_time=required_ready_time
             )
             
             print("\n" + summary.format_summary())
@@ -361,7 +332,7 @@ class BAMLStreamProcessor:
         
         for field_name, config in self.field_configs.items():
             field_state = field_states[field_name]
-            is_required = field_name in self.required_fields
+            is_required = config.required
             line = self.formatter.format_field_line(field_state, config, is_required)
             print(line)
     
@@ -379,22 +350,4 @@ class BAMLStreamProcessor:
             for field_name in fields
         }
         
-        transitions = [RequiredFieldsComplete(required)]
-        
-        return cls(field_configs, transitions, title=title, **kwargs)
-    
-    @classmethod  
-    def for_fast_transitions(
-        cls,
-        field_configs: Dict[str, FieldConfig],
-        required_fields: List[str],
-        title: str = "BAML Fast Transitions",
-        **kwargs
-    ) -> "BAMLStreamProcessor":
-        """Create a processor optimized for fast transitions (convenience method)"""
-        transitions = [
-            RequiredFieldsComplete(required_fields),
-            AllFieldsComplete()
-        ]
-        
-        return cls(field_configs, transitions, title=title, **kwargs)
+        return cls(field_configs, title=title, **kwargs)

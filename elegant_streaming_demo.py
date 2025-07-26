@@ -18,10 +18,7 @@ from baml_client import b
 # Import our elegant helpers
 from baml_streaming_helpers import (
     BAMLStreamProcessor,
-    FieldConfig,
-    RequiredFieldsComplete,
-    AllFieldsComplete,
-    CustomCondition
+    FieldConfig
 )
 
 # Load environment variables
@@ -63,7 +60,7 @@ async def demo_simple_usage():
     
     # Process the stream - that's it!
     stream = b.stream.ExtractUserProfile(user_text)
-    summary = await processor.process_stream(stream, {0: on_required_fields_ready})
+    summary = await processor.process_stream(stream, on_required_ready=on_required_fields_ready)
     
     print(f"\n✨ Demo 1 completed with {summary.time_savings_percent:.1f}% time savings!")
     return summary
@@ -89,28 +86,17 @@ async def demo_advanced_usage():
                                 formatter=lambda x: "🌟 Premium" if x else "📦 Standard" if x is not None else "[None]")
     }
     
-    # Create multiple transition conditions
-    transitions = [
-        RequiredFieldsComplete(["name", "email", "is_verified"]),  # Fast transition
-        CustomCondition(
-            lambda states: states["age"].value and states["age"].value >= 21,
-            "User is 21 or older"
-        ),
-        AllFieldsComplete()  # Everything done
-    ]
-    
     processor = BAMLStreamProcessor(
         field_configs=field_configs,
-        transitions=transitions,
         title="Advanced BAML Processing"
     )
     
-    # Define handlers for different transitions
-    async def on_fast_transition(field_states, elapsed_time):
+    # Define handlers for required fields and completion
+    async def on_required_ready(field_states, elapsed_time):
         name = field_states["name"].value
         email = field_states["email"].value
         is_verified = field_states["is_verified"].value
-        print(f"   🚀 Fast transition: Processing verified user {name}")
+        print(f"   🚀 Required fields ready: Processing verified user {name}")
         
         try:
             result = await b.ProcessUser(name, email)
@@ -118,13 +104,10 @@ async def demo_advanced_usage():
         except Exception as e:
             print(f"   ❌ Processing failed: {e}")
     
-    async def on_age_verified(field_states, elapsed_time):
-        age = field_states["age"].value
-        print(f"   🔞 Age verification passed: User is {age} years old")
-    
     async def on_all_complete(field_states, elapsed_time):
         premium = field_states["is_premium"].value
-        print(f"   🎉 Complete profile processed - Premium: {premium}")
+        age = field_states["age"].value
+        print(f"   🎉 Complete profile processed - Age: {age}, Premium: {premium}")
     
     # Test data
     user_text = """
@@ -135,15 +118,13 @@ async def demo_advanced_usage():
     she qualifies for premium access to our research database.
     """
     
-    # Process with multiple handlers
-    transition_handlers = {
-        0: on_fast_transition,    # Required fields complete
-        1: on_age_verified,       # Age >= 21
-        2: on_all_complete        # All fields complete
-    }
-    
+    # Process with handlers
     stream = b.stream.ExtractUserProfile(user_text)
-    summary = await processor.process_stream(stream, transition_handlers)
+    summary = await processor.process_stream(
+        stream, 
+        on_required_ready=on_required_ready,
+        on_all_complete=on_all_complete
+    )
     
     print(f"\n✨ Demo 2 completed with {summary.time_savings_percent:.1f}% time savings!")
     return summary
@@ -159,23 +140,26 @@ async def demo_comparison():
 - 150+ lines of mixed logic
 - Hardcoded field names and configurations
 - Manual state tracking and display formatting
+- Complex transition management
 - Difficult to extend or modify
 - Single-use, not reusable
 
 ✨ AFTER (with helpers):
 - 10-20 lines for typical use case
-- Declarative configuration
+- Simple required/unrequired field concepts
+- Declarative FieldConfig with custom formatting
 - Automatic state management
+- Clean on_required_ready / on_all_complete handlers
 - Easy to extend and customize
 - Highly reusable across projects
 
 🎯 KEY BENEFITS:
 - 90% reduction in boilerplate code
-- Separation of concerns (config vs logic vs display)
+- Simplified API: just required vs unrequired fields
 - Type-safe configuration
 - Easy testing of individual components
-- Composable design for complex scenarios
-- Clean APIs that are hard to misuse
+- Clean handlers for business logic
+- No complex transition management needed
 """)
 
 
