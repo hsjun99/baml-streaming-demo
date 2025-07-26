@@ -14,14 +14,13 @@ This demo showcases BAML's streaming capabilities with fast transitions - execut
 ```
 baml-streaming-test/
 ├── baml_src/           # BAML source files
-│   ├── baml.toml      # BAML configuration
+│   ├── baml.toml      # BAML configuration  
 │   └── main.baml      # Function definitions
-├── baml_client/       # Generated BAML client (auto-generated)
+├── baml_client/       # Generated BAML client
 ├── src/               # Python source code
 │   └── streaming_demo.py
-├── run_demo.py        # Main demo runner
-├── pyproject.toml     # Poetry configuration
-└── README.md
+├── run_demo.py        # Demo runner
+└── pyproject.toml     # Poetry configuration
 ```
 
 ## Setup
@@ -34,15 +33,9 @@ baml-streaming-test/
 2. **Set up environment**:
    ```bash
    export OPENAI_API_KEY=your_api_key_here
-   # Or copy .env.example to .env and edit it
    ```
 
-3. **Run the showcase demo** (no API key required):
-   ```bash
-   python demo_showcase.py
-   ```
-
-4. **Run the full demo** (requires API key):
+3. **Run the demo**:
    ```bash
    python run_demo.py
    ```

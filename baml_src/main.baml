@@ -18,10 +18,10 @@ class UserProfile {
 }
 
 // Define the client
-client<llm> GPT4oMini {
+client<llm> GPT4o {
   provider openai
   options {
-    model gpt-4o-mini
+    model gpt-4o
     api_key env.OPENAI_API_KEY
     supports_streaming true
   }
@@ -29,7 +29,7 @@ client<llm> GPT4oMini {
 
 // Function to extract user profile from text
 function ExtractUserProfile(user_text: string) -> UserProfile {
-  client GPT4oMini
+  client GPT4o
   prompt #"
     You are a professional data extraction expert. Please carefully analyze the following text and extract detailed user profile information. Take your time to provide a comprehensive response with rich details for each field.
 
@@ -54,7 +54,7 @@ function ExtractUserProfile(user_text: string) -> UserProfile {
 
 // Function that represents the "next job" - only needs name and email
 function ProcessUser(name: string, email: string) -> string {
-  client GPT4oMini
+  client GPT4o
   prompt #"
     Generate a welcome message for:
     Name: {{ name }}
