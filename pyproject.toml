@@ -1,0 +1,21 @@
+[project]
+name = "baml-streaming-demo"
+version = "0.1.0"
+description = "BAML streaming demo with fast transitions"
+authors = [
+    {name = "Demo User"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "baml-py (==0.202.1)",
+    "asyncio (>=3.4.3,<4.0.0)",
+    "typing-extensions (>=4.14.1,<5.0.0)",
+    "pydantic (>=2.11.7,<3.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
