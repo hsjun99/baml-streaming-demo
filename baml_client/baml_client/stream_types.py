@@ -27,9 +27,9 @@ class StreamState(BaseModel, typing.Generic[StreamStateValueT]):
 # #########################################################################
 
 class UserProfile(BaseModel):
-    name: str
-    email: str
-    is_verified: bool
+    name: StreamState[str]
+    email: StreamState[str]
+    is_verified: StreamState[bool]
     bio: StreamState[typing.Optional[str]]
     age: StreamState[typing.Optional[int]]
     is_premium: StreamState[typing.Optional[bool]]

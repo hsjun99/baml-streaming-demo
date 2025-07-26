@@ -8,10 +8,10 @@ generator PythonClient {
 // Define an entity with 6 fields
 class UserProfile {
   // Critical fields needed for next job execution (3 required)
-  // These use @stream.done so they only appear when complete
-  name string @stream.done @stream.not_null
-  email string @stream.done @stream.not_null
-  is_verified bool @stream.done @stream.not_null
+  // These use @stream.with_state to track progress and completion state
+  name string @stream.with_state @stream.not_null
+  email string @stream.with_state @stream.not_null
+  is_verified bool @stream.with_state @stream.not_null
   
   // Optional fields that can stream with state information
   bio string @stream.with_state
