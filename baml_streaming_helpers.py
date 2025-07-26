@@ -3,23 +3,20 @@
 BAML Streaming Helpers
 ======================
 
-Generalizable, reusable helper functions for BAML streaming operations.
-Designed from the perspective of clean architecture and extensibility.
+Pydantic schema-driven streaming helpers for BAML operations.
+Uses the Pydantic model itself as the configuration source.
 
 Key Design Principles:
-- Separation of concerns
-- Configuration-driven behavior
-- Composability and reusability
-- Type safety and easy testing
-- Simple common case, extensible for power users
+- Schema as configuration (single source of truth)
+- Pydantic-native approach
+- Type safety and validation
+- Simple, clean API
 """
 
 import time
-import asyncio
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Callable, Union
+from typing import Any, Dict, List, Optional, Callable, Type
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
 # Core Data Structures
@@ -31,26 +28,54 @@ class FieldStatus(Enum):
     COMPLETE = "Complete"  # Field has a value
 
 
-@dataclass(frozen=True, slots=True)
-class FieldState:
+class FieldState(BaseModel):
     """Immutable representation of a field's state during streaming"""
+    model_config = ConfigDict(frozen=True, extra='forbid')
+    
     name: str
     value: Any
     status: FieldStatus
-    timestamp: float
-
-
-@dataclass(frozen=True)
-class FieldConfig:
-    """Configuration for how a field should be processed and displayed"""
-    name: str
-    required: bool = False
-    display_name: Optional[str] = None
-    formatter: Optional[Callable[[Any], str]] = None
+    timestamp: float = Field(default_factory=time.time)
     
-    @property
-    def effective_display_name(self) -> str:
-        return self.display_name or self.name
+    @field_validator('timestamp')
+    @classmethod
+    def validate_timestamp(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError('Timestamp must be non-negative')
+        return v
+
+
+# Schema Introspection
+# ====================
+
+class SchemaIntrospector:
+    """Introspects Pydantic models to extract streaming configuration"""
+    
+    @staticmethod
+    def get_required_fields(model_class: Type[BaseModel]) -> List[str]:
+        """Extract fields marked as required for execution from Pydantic model"""
+        required_fields = []
+        
+        for field_name, field_info in model_class.model_fields.items():
+            # Check if field is marked as required for execution
+            json_schema_extra = getattr(field_info, 'json_schema_extra', None) or {}
+            if json_schema_extra.get('required_for_execution', False):
+                required_fields.append(field_name)
+        
+        return required_fields
+    
+    @staticmethod
+    def get_all_field_names(model_class: Type[BaseModel]) -> List[str]:
+        """Get all field names from Pydantic model"""
+        return list(model_class.model_fields.keys())
+    
+    @staticmethod
+    def get_field_display_name(model_class: Type[BaseModel], field_name: str) -> str:
+        """Get display name for a field (from description or field name)"""
+        field_info = model_class.model_fields.get(field_name)
+        if field_info and field_info.description:
+            return field_info.description
+        return field_name
 
 
 # Required Field System
@@ -70,7 +95,7 @@ class RequiredFieldsChecker:
             return False
             
         required_ready = all(
-            field_states.get(field_name, FieldState(field_name, None, FieldStatus.NONE, 0)).status == FieldStatus.COMPLETE
+            field_states.get(field_name, FieldState(name=field_name, value=None, status=FieldStatus.NONE, timestamp=0)).status == FieldStatus.COMPLETE
             for field_name in self.required_fields
         )
         
@@ -107,21 +132,17 @@ class RequiredFieldsChecker:
 class StreamDisplayFormatter:
     """Handles display formatting for streaming progress"""
     
-    def format_field_line(self, field_state: FieldState, config: FieldConfig, is_required: bool) -> str:
+    def format_field_line(self, field_state: FieldState, display_name: str, is_required: bool) -> str:
         """Format a single field line for display"""
         marker = "⭐" if is_required else "  "
         emoji = "✅" if field_state.status == FieldStatus.COMPLETE else "⏸️"
         
-        value_str = self._format_value(field_state.value, config)
-        display_name = config.effective_display_name
+        value_str = self._format_value(field_state.value)
         
         return f"{marker} {display_name:10}: {emoji} {field_state.status.value:10} → {value_str}"
     
-    def _format_value(self, value: Any, config: FieldConfig) -> str:
+    def _format_value(self, value: Any) -> str:
         """Format a field value for display"""
-        if config.formatter:
-            return config.formatter(value)
-        
         if value is None:
             return "[None]"
         elif isinstance(value, str) and len(value) > 30:
@@ -155,11 +176,12 @@ class StreamDisplayFormatter:
 # Performance Tracking
 # ====================
 
-@dataclass
-class StreamTimer:
+class StreamTimer(BaseModel):
     """Tracks timing and performance metrics for streaming"""
-    start_time: float = field(default_factory=time.time)
-    events: Dict[str, float] = field(default_factory=dict)
+    model_config = ConfigDict(extra='forbid')
+    
+    start_time: float = Field(default_factory=time.time)
+    events: Dict[str, float] = Field(default_factory=dict)
     
     def get_elapsed(self) -> float:
         """Get elapsed time since start"""
@@ -181,13 +203,21 @@ class StreamTimer:
         self.events.clear()
 
 
-@dataclass
-class PerformanceSummary:
+class PerformanceSummary(BaseModel):
     """Summary of streaming performance metrics"""
-    total_time: float
-    partial_count: int
-    events: Dict[str, float]
-    required_ready_time: Optional[float] = None
+    model_config = ConfigDict(extra='forbid')
+    
+    total_time: float = Field(..., ge=0, description="Total execution time")
+    partial_count: int = Field(..., ge=0, description="Number of partial updates received")
+    events: Dict[str, float] = Field(default_factory=dict, description="Timing events")
+    required_ready_time: Optional[float] = Field(default=None, ge=0, description="Time when required fields were ready")
+    
+    @field_validator('total_time', 'required_ready_time')
+    @classmethod
+    def validate_timing(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
+            raise ValueError('Time values must be non-negative')
+        return v
     
     @property
     def time_savings_percent(self) -> Optional[float]:
@@ -218,22 +248,24 @@ class PerformanceSummary:
 # =================
 
 class BAMLStreamProcessor:
-    """Main orchestrator for BAML streaming with configurable behavior"""
+    """Schema-driven BAML streaming processor using Pydantic models"""
     
     def __init__(
         self,
-        field_configs: Dict[str, FieldConfig],
+        model_class: Type[BaseModel],
         formatter: Optional[StreamDisplayFormatter] = None,
         timer: Optional[StreamTimer] = None,
-        title: str = "BAML Streaming"
+        title: Optional[str] = None
     ):
-        self.field_configs = field_configs
+        self.model_class = model_class
         self.formatter = formatter or StreamDisplayFormatter()
         self.timer = timer or StreamTimer()
-        self.title = title
+        self.title = title or f"{model_class.__name__} Streaming"
         
-        # Derived properties
-        self.required_fields = [name for name, config in field_configs.items() if config.required]
+        # Extract configuration from Pydantic model
+        self.introspector = SchemaIntrospector()
+        self.all_fields = self.introspector.get_all_field_names(model_class)
+        self.required_fields = self.introspector.get_required_fields(model_class)
         self.required_checker = RequiredFieldsChecker(self.required_fields)
     
     async def process_stream(
@@ -252,7 +284,7 @@ class BAMLStreamProcessor:
         # Display header
         print(self.formatter.format_header(
             self.title,
-            len(self.field_configs),
+            len(self.all_fields),
             len(self.required_fields)
         ))
         
@@ -290,7 +322,7 @@ class BAMLStreamProcessor:
         
         # Get final result
         try:
-            final_result = await stream.get_final_response()
+            await stream.get_final_response()  # Ensure stream is consumed
             total_time = self.timer.get_elapsed()
             
             # Generate performance summary
@@ -314,13 +346,13 @@ class BAMLStreamProcessor:
         field_states = {}
         current_time = time.time()
         
-        for field_name, config in self.field_configs.items():
+        for field_name in self.all_fields:
             field_obj = getattr(partial, field_name, None)
             
             if field_obj is None:
-                state = FieldState(field_name, None, FieldStatus.NONE, current_time)
+                state = FieldState(name=field_name, value=None, status=FieldStatus.NONE, timestamp=current_time)
             else:
-                state = FieldState(field_name, field_obj, FieldStatus.COMPLETE, current_time)
+                state = FieldState(name=field_name, value=field_obj, status=FieldStatus.COMPLETE, timestamp=current_time)
             
             field_states[field_name] = state
         
@@ -330,24 +362,28 @@ class BAMLStreamProcessor:
         """Display the current state of all fields"""
         print(self.formatter.format_partial_header(partial_count, elapsed))
         
-        for field_name, config in self.field_configs.items():
+        for field_name in self.all_fields:
             field_state = field_states[field_name]
-            is_required = config.required
-            line = self.formatter.format_field_line(field_state, config, is_required)
+            is_required = field_name in self.required_fields
+            display_name = self.introspector.get_field_display_name(self.model_class, field_name)
+            line = self.formatter.format_field_line(field_state, display_name, is_required)
             print(line)
     
     @classmethod
-    def from_fields(
+    def create_dynamic_model(
         cls,
-        fields: List[str],
-        required: List[str],
-        title: str = "BAML Streaming",
-        **kwargs
-    ) -> "BAMLStreamProcessor":
-        """Create a processor from simple field lists (convenience method)"""
-        field_configs = {
-            field_name: FieldConfig(field_name, required=(field_name in required))
-            for field_name in fields
-        }
+        fields: Dict[str, Any],
+        required_fields: List[str],
+        model_name: str = "DynamicModel"
+    ) -> Type[BaseModel]:
+        """Create a dynamic Pydantic model for simple use cases"""
+        model_fields = {}
         
-        return cls(field_configs, title=title, **kwargs)
+        for field_name in fields:
+            json_schema_extra = {}
+            if field_name in required_fields:
+                json_schema_extra['required_for_execution'] = True
+            
+            model_fields[field_name] = Field(..., json_schema_extra=json_schema_extra)
+        
+        return type(model_name, (BaseModel,), {'__annotations__': fields, **model_fields})
