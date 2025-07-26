@@ -42,7 +42,7 @@ async def demo_baml_streaming_with_fast_transitions():
     stream = b.stream.ExtractUserProfile(user_text)
     
     partial_count = 0
-    required_fields = ["name", "email"]  # Simplified required fields
+    required_fields = ["name", "email", "is_verified"]  # Required fields for fast transition
     fast_transition_triggered = False
     fast_transition_time = None
     
@@ -57,7 +57,7 @@ async def demo_baml_streaming_with_fast_transitions():
             print(f"\n📊 Partial #{partial_count} at {elapsed:.3f}s:")
             
             # Check field states
-            fields = ["name", "email", "bio", "age"]
+            fields = ["name", "email", "is_verified", "bio", "age", "is_premium"]
             field_states = {}
             
             for field_name in fields:
@@ -138,8 +138,10 @@ async def demo_baml_streaming_with_fast_transitions():
         print(f"\n📋 Final Profile:")
         print(f"   Name: {final_profile.name}")
         print(f"   Email: {final_profile.email}")
+        print(f"   Is Verified: {final_profile.is_verified}")
         print(f"   Bio: {final_profile.bio[:50]}..." if final_profile.bio else "   Bio: None")
         print(f"   Age: {final_profile.age}")
+        print(f"   Is Premium: {final_profile.is_premium}")
         
     except Exception as e:
         print(f"❌ Final response error: {e}")

@@ -51,7 +51,7 @@ class UserProfileAst:
     def __init__(self, tb: type_builder.TypeBuilder):
         _tb = tb._tb # type: ignore (we know how to use this private attribute)
         self._bldr = _tb.class_("UserProfile")
-        self._properties: typing.Set[str] = set([  "name",  "email",  "bio",  "age",  ])
+        self._properties: typing.Set[str] = set([  "name",  "email",  "is_verified",  "bio",  "age",  "is_premium",  ])
         self._props = UserProfileProperties(self._bldr, self._properties)
 
     def type(self) -> baml_py.FieldType:
@@ -88,12 +88,20 @@ class UserProfileProperties:
         return type_builder.ClassPropertyViewer(self.__bldr.property("email"))
     
     @property
+    def is_verified(self) -> type_builder.ClassPropertyViewer:
+        return type_builder.ClassPropertyViewer(self.__bldr.property("is_verified"))
+    
+    @property
     def bio(self) -> type_builder.ClassPropertyViewer:
         return type_builder.ClassPropertyViewer(self.__bldr.property("bio"))
     
     @property
     def age(self) -> type_builder.ClassPropertyViewer:
         return type_builder.ClassPropertyViewer(self.__bldr.property("age"))
+    
+    @property
+    def is_premium(self) -> type_builder.ClassPropertyViewer:
+        return type_builder.ClassPropertyViewer(self.__bldr.property("is_premium"))
     
     
 

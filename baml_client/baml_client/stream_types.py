@@ -27,10 +27,12 @@ class StreamState(BaseModel, typing.Generic[StreamStateValueT]):
 # #########################################################################
 
 class UserProfile(BaseModel):
-    name: StreamState[str]
-    email: StreamState[str]
-    bio: StreamState[typing.Optional[str]]
-    age: StreamState[typing.Optional[int]]
+    name: str
+    email: str
+    is_verified: typing.Optional[bool] = None
+    bio: typing.Optional[str] = None
+    age: typing.Optional[int] = None
+    is_premium: typing.Optional[bool] = None
 
 # #########################################################################
 # Generated type aliases (0)

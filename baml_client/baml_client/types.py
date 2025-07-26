@@ -47,8 +47,10 @@ def all_succeeded(checks: typing.Dict[CheckName, Check]) -> bool:
 class UserProfile(BaseModel):
     name: str
     email: str
+    is_verified: bool
     bio: str
     age: int
+    is_premium: bool
 
 # #########################################################################
 # Generated type aliases (0)

@@ -8,14 +8,14 @@ generator PythonClient {
 // Simple User Profile for streaming demo
 class UserProfile {
   // Critical fields needed for next job execution (3 required)
-  name string @stream.with_state @stream.not_null
-  email string @stream.with_state @stream.not_null
-  // is_verified bool @stream.with_state @stream.not_null
+  name string @stream.not_null
+  email string @stream.not_null
+  is_verified bool
   
   // Optional fields that can stream with state information
-  bio string @stream.with_state
-  age int @stream.with_state
-  // is_premium bool @stream.with_state
+  bio string
+  age int
+  is_premium bool
 }
 
 // Define the client
@@ -41,8 +41,10 @@ function ExtractUserProfile(user_text: string) -> UserProfile {
     
     1. name: Extract the person's full name
     2. email: Find and extract their email address
-    3. bio: Create a biographical description (2-3 sentences)
-    4. age: Extract their age if mentioned, or make a reasonable inference
+    3. is_verified: Determine if this person appears to be verified/credible (true/false)
+    4. bio: Create a biographical description (2-3 sentences)
+    5. age: Extract their age if mentioned, or make a reasonable inference
+    6. is_premium: Determine if this person qualifies for premium status (true/false)
     
     {{ ctx.output_format }}
   "#
