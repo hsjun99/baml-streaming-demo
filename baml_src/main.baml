@@ -22,7 +22,7 @@ class UserProfile {
 client<llm> GPT4o {
   provider openai
   options {
-    model gpt-4o
+    model gpt-4.1-mini
     api_key env.OPENAI_API_KEY
     supports_streaming true
   }

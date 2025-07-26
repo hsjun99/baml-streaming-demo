@@ -28,8 +28,8 @@ load_dotenv()
 
 
 async def demo_basic_usage():
-    """Demo 1: The obvious way - simple generator pattern"""
-    print("🎯 DEMO 1: The Obvious Way")
+    """Demo 1: Using callbacks - the cleanest approach"""
+    print("🎯 DEMO 1: Callback-Based Streaming")
     print("=" * 40)
     
     user_text = """
@@ -40,72 +40,71 @@ async def demo_basic_usage():
     she qualifies for premium access to our research database.
     """
     
-    stream = b.stream.ExtractUserProfile(user_text)
-    
-    # The Raymond Hettinger way - obvious and simple
-    async for state in track_stream(stream, UserProfile):
-        if state.required_ready:
-            # Create partial UserProfile with required fields
-            partial_profile = UserProfile(**state.fields)
-            print(f"   🚀 Starting ProcessUser with partial profile: {partial_profile.name}")
-            
-            try:
-                result = await b.ProcessUser(partial_profile.name, partial_profile.email)
-                print(f"   ✅ ProcessUser completed: {result}")
-            except Exception as e:
-                print(f"   ❌ ProcessUser failed: {e}")
-        
-        if state.all_complete:
-            # Create complete UserProfile with all fields
-            complete_profile = UserProfile(**state.fields)
-            print(f"   🎉 Complete profile created!")
-            print(f"   👤 {complete_profile.name}, {complete_profile.age} years old")
-            print(f"   📧 {complete_profile.email} ({'Premium' if complete_profile.is_premium else 'Standard'} user)")
-            print(f"   📝 Bio: {complete_profile.bio[:50] + '...' if complete_profile.bio else 'No bio'}")
-    
-    print("✨ Demo 1 completed!")
-
-
-async def demo_simple_api():
-    """Demo 2: Even simpler API for common use case"""
-    print("\n\n🎯 DEMO 2: Ultra-Simple API")
-    print("=" * 40)
-    
-    user_text = """
-    Dr. Sarah Chen is a distinguished professor of Computer Science at Stanford University.
-    Contact her at sarah.chen@stanford.edu. She's 42 years old and has been teaching 
-    for over 15 years. Her research focuses on machine learning and she has published 
-    numerous papers in top conferences. As a tenured professor with extensive publications,
-    she qualifies for premium access to our research database.
-    """
-    
-    # Define callbacks for different stages using UserProfile entities
+    # Define what happens when required fields are ready
     async def process_when_ready(fields):
         partial_profile = UserProfile(**fields)
-        print(f"   🚀 Processing user profile: {partial_profile.name}")
-        try:
-            result = await b.ProcessUser(partial_profile.name, partial_profile.email)
-            print(f"   ✅ Result: {result}")
-        except Exception as e:
-            print(f"   ❌ ProcessUser API call failed: {e}")
+        print(f"   🚀 Starting next task with: {partial_profile.name}")
+        
+        # Simulate any async task that needs the required fields
+        await asyncio.sleep(0.1)  # Simulate processing time
+        result = f"Account created for {partial_profile.name} ({partial_profile.email})"
+        print(f"   ✅ Next task completed: {result}")
     
-    async def finalize_when_ready(fields):
+    # Define what happens when all fields are complete
+    async def finalize_when_complete(fields):
         complete_profile = UserProfile(**fields)
-        print(f"   🎉 Complete profile finalized!")
-        print(f"   👤 {complete_profile.name} ({complete_profile.age} years old)")
-        print(f"   🎖️ {'Premium' if complete_profile.is_premium else 'Standard'} user")
-        print(f"   ✅ Verified: {complete_profile.is_verified}")
+        print(f"   🎉 Complete profile created!")
+        print(f"   👤 {complete_profile.name}, {complete_profile.age} years old")
+        print(f"   📧 {complete_profile.email} ({'Premium' if complete_profile.is_premium else 'Standard'} user)")
+        print(f"   📝 Bio: {complete_profile.bio[:50] + '...' if complete_profile.bio else 'No bio'}")
     
-    # Even simpler with callbacks - Raymond style!
+    # Ultra-clean API using callbacks
     stream = b.stream.ExtractUserProfile(user_text)
     stats = await simple_track(
-        stream, UserProfile, 
+        stream, UserProfile,
         on_required_ready=process_when_ready,
-        on_all_ready=finalize_when_ready
+        on_all_ready=finalize_when_complete
     )
     
-    print("✨ Demo 2 completed!")
+    print("✨ Demo 1 completed!")
     return stats
+
+
+async def demo_generator_pattern():
+    """Demo 2: Manual generator pattern for full control"""
+    print("\n\n🎯 DEMO 2: Manual Generator Pattern")
+    print("=" * 40)
+    
+    user_text = """
+    Dr. Sarah Chen is a distinguished professor of Computer Science at Stanford University.
+    Contact her at sarah.chen@stanford.edu. She's 42 years old and has been teaching 
+    for over 15 years. Her research focuses on machine learning and she has published 
+    numerous papers in top conferences. As a tenured professor with extensive publications,
+    she qualifies for premium access to our research database.
+    """
+    
+    stream = b.stream.ExtractUserProfile(user_text)
+    
+    # Manual control with generator pattern
+    async for state in track_stream(stream, UserProfile, show_progress=True):
+        if state.required_ready:
+            # Execute next task as soon as required fields are ready
+            partial_profile = UserProfile(**state.fields)
+            print(f"   🚀 Executing next task with: {partial_profile.name}")
+            
+            # Simulate any async task that needs the required fields
+            await asyncio.sleep(0.1)  # Simulate processing time
+            result = f"Database entry created for {partial_profile.name}"
+            print(f"   ✅ Next task completed: {result}")
+        
+        if state.all_complete:
+            # Final processing when everything is done
+            complete_profile = UserProfile(**state.fields)
+            print(f"   🎉 All processing complete!")
+            print(f"   👤 Final profile: {complete_profile.name} ({complete_profile.age}y/o)")
+            print(f"   🎖️ Status: {'Premium' if complete_profile.is_premium else 'Standard'}")
+    
+    print("✨ Demo 2 completed!")
 
 
 async def demo_comparison():
@@ -150,16 +149,15 @@ async def main():
     print("Demonstrating: 'There should be one obvious way to do it'\n")
     
     try:
-        await demo_basic_usage()
-        stats = await demo_simple_api()
+        stats = await demo_basic_usage()
+        await demo_generator_pattern()
         await demo_comparison()
         
         print("\n\n🎉 ALL DEMOS COMPLETED!")
         print("=" * 50)
-        print(f"Final stats: {stats['partial_count']} partials, {stats['total_time']:.3f}s total")
-        if stats['required_ready_time']:
-            savings = (stats['total_time'] - stats['required_ready_time']) / stats['total_time'] * 100
-            print(f"Time savings: {savings:.1f}% (required ready at {stats['required_ready_time']:.3f}s)")
+        print(f"Final stats: {stats.partial_count} partials, {stats.total_time:.3f}s total")
+        if stats.required_ready_time:
+            print(f"Time savings: {stats.time_savings_percent:.1f}% (required ready at {stats.required_ready_time:.3f}s)")
         
         print("\n✨ Raymond Hettinger would be proud:")
         print("   - Simple is better than complex ✅")
