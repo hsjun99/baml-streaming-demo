@@ -16,7 +16,7 @@ The entire system: 1 NamedTuple + 4 pure functions = 60 lines
 """
 
 import time
-from typing import NamedTuple, Set, Dict, Any, Type, AsyncGenerator
+from typing import NamedTuple, Set, Dict, Any, Type, AsyncGenerator, Optional
 from pydantic import BaseModel
 
 
@@ -28,6 +28,21 @@ class StreamState(NamedTuple):
     all_complete: bool
     elapsed: float
     partial_count: int
+
+
+class StreamStats(NamedTuple):
+    """Final performance statistics - Raymond Hettinger approved immutable data"""
+    total_time: float
+    partial_count: int
+    required_ready_time: Optional[float] = None
+    all_complete_time: Optional[float] = None
+    
+    @property
+    def time_savings_percent(self) -> Optional[float]:
+        """Calculate time savings percentage if required fields triggered early"""
+        if self.required_ready_time is None:
+            return None
+        return (self.total_time - self.required_ready_time) / self.total_time * 100
 
 
 # Pure functions only - no complex classes needed
@@ -45,12 +60,27 @@ def get_all_fields(schema_class: Type[BaseModel]) -> Set[str]:
 
 
 def extract_current_fields(partial, schema_class: Type[BaseModel]) -> Dict[str, Any]:
-    """Extract available fields from partial response - no magic, just getattr"""
-    return {
-        name: getattr(partial, name, None) 
-        for name in schema_class.model_fields 
-        if hasattr(partial, name) and getattr(partial, name) is not None
-    }
+    """Extract available fields from partial response - David Beazley optimized"""
+    fields = {}
+    for name in schema_class.model_fields:
+        if hasattr(partial, name):
+            value = getattr(partial, name)
+            if value is not None:
+                fields[name] = value
+    return fields
+
+
+def notification_tracker():
+    """David Beazley style: functional state tracking with closure"""
+    notified = set()
+    
+    def is_new_event(event_type: str) -> bool:
+        if event_type not in notified:
+            notified.add(event_type)
+            return True
+        return False
+    
+    return is_new_event
 
 
 async def track_stream(
@@ -81,13 +111,14 @@ async def track_stream(
             on_all_ready=lambda fields: finalize_user(fields)
         ):
     """
-    # Simple setup - no complex initialization
+    # Simple setup - functional state tracking
     required_fields = get_required_fields(schema_class)
     all_fields = get_all_fields(schema_class)
     start_time = time.time()
     partial_count = 0
-    required_notified = False
-    all_complete_notified = False
+    
+    # David Beazley style: functional state tracking
+    track_notifications = notification_tracker()
     
     # The generator pattern Raymond loves
     async for partial in stream:
@@ -95,22 +126,20 @@ async def track_stream(
         current_fields = extract_current_fields(partial, schema_class)
         elapsed = time.time() - start_time
         
-        # Simple boolean logic - no complex state management
+        # Functional event tracking - David Beazley approved
         required_ready = (
             required_fields.issubset(current_fields) and 
-            not required_notified
+            track_notifications("required_ready")
         )
-        if required_ready:
-            required_notified = True
-            if on_required_ready:
-                await on_required_ready(current_fields)
+        if required_ready and on_required_ready:
+            await on_required_ready(current_fields)
             
-        all_complete = set(current_fields.keys()) == all_fields
-        all_complete_triggered = all_complete and not all_complete_notified
-        if all_complete_triggered:
-            all_complete_notified = True
-            if on_all_ready:
-                await on_all_ready(current_fields)
+        all_complete_triggered = (
+            set(current_fields.keys()) == all_fields and
+            track_notifications("all_complete")
+        )
+        if all_complete_triggered and on_all_ready:
+            await on_all_ready(current_fields)
         
         # Yield simple state - let the caller decide what to do
         state = StreamState(
@@ -127,16 +156,17 @@ async def track_stream(
         yield state
 
 
-def format_progress(state: StreamState, required_fields: Set[str]) -> str:
-    """Format progress display - simple string formatting"""
+def format_field_line(name: str, value: Any, is_required: bool) -> str:
+    """Format a single field line - David Beazley single responsibility"""
+    marker = "⭐" if is_required else "  "
+    value_str = str(value)[:20] + "..." if len(str(value)) > 20 else str(value)
+    return f"{marker} {name}: {value_str}"
+
+
+def format_header(state: StreamState) -> str:
+    """Format the progress header with state indicators"""
     ready_marker = "🚀" if state.required_ready else "📊"
     complete_marker = "✅" if state.all_complete else ""
-    
-    field_summary = []
-    for name, value in state.fields.items():
-        marker = "⭐" if name in required_fields else "  "
-        value_str = str(value)[:20] + "..." if len(str(value)) > 20 else str(value)
-        field_summary.append(f"{marker} {name}: {value_str}")
     
     header = f"{ready_marker} Partial #{state.partial_count} at {state.elapsed:.3f}s {complete_marker}"
     
@@ -146,37 +176,58 @@ def format_progress(state: StreamState, required_fields: Set[str]) -> str:
     if state.all_complete:
         header += "\n🎉 ALL FIELDS COMPLETE - Full profile ready!"
     
-    return f"{header}\n" + "\n".join(field_summary)
+    return header
+
+
+def format_progress(state: StreamState, required_fields: Set[str]) -> str:
+    """Format progress display - composed from smaller functions"""
+    header = format_header(state)
+    field_lines = [
+        format_field_line(name, value, name in required_fields)
+        for name, value in state.fields.items()
+    ]
+    return f"{header}\n" + "\n".join(field_lines)
 
 
 # Convenience function for common use case
-async def simple_track(stream, schema_class: Type[BaseModel], on_required_ready=None, on_all_ready=None):
+async def simple_track(stream, schema_class: Type[BaseModel], on_required_ready=None, on_all_ready=None) -> StreamStats:
     """
     Even simpler API for the most common use case.
-    Returns final statistics.
+    Returns final statistics as immutable NamedTuple.
     """
-    stats = {"total_time": 0, "partial_count": 0, "required_ready_time": None, "all_complete_time": None}
+    # Track state with local variables
+    total_time = 0.0
+    partial_count = 0
+    required_ready_time = None
+    all_complete_time = None
     
     async for state in track_stream(stream, schema_class):
-        stats["partial_count"] = state.partial_count
-        stats["total_time"] = state.elapsed
+        partial_count = state.partial_count
+        total_time = state.elapsed
         
         if state.required_ready:
-            stats["required_ready_time"] = state.elapsed
+            required_ready_time = state.elapsed
             if on_required_ready:
                 await on_required_ready(state.fields)
         
         if state.all_complete:
-            stats["all_complete_time"] = state.elapsed
+            all_complete_time = state.elapsed
             if on_all_ready:
                 await on_all_ready(state.fields)
     
-    # Calculate time savings
-    if stats["required_ready_time"]:
-        savings = (stats["total_time"] - stats["required_ready_time"]) / stats["total_time"] * 100
-        print(f"\n✨ Completed with {savings:.1f}% time savings!")
-        print(f"   Required ready: {stats['required_ready_time']:.3f}s")
-        print(f"   Total time: {stats['total_time']:.3f}s")
+    # Create immutable stats
+    stats = StreamStats(
+        total_time=total_time,
+        partial_count=partial_count,
+        required_ready_time=required_ready_time,
+        all_complete_time=all_complete_time
+    )
+    
+    # Display results using the NamedTuple's property
+    if stats.time_savings_percent:
+        print(f"\n✨ Completed with {stats.time_savings_percent:.1f}% time savings!")
+        print(f"   Required ready: {stats.required_ready_time:.3f}s")
+        print(f"   Total time: {stats.total_time:.3f}s")
     
     return stats
 
