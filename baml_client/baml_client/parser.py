@@ -22,16 +22,22 @@ class LlmResponseParser:
     def __init__(self, options: DoNotUseDirectlyCallManager):
         self.__options = options
 
-    def ExtractUserProfile(
-        self, llm_response: str, baml_options: BamlCallOptions = {},
-    ) -> types.UserProfile:
-        result = self.__options.merge_options(baml_options).parse_response(function_name="ExtractUserProfile", llm_response=llm_response, mode="request")
-        return typing.cast(types.UserProfile, result)
-
-    def ProcessUser(
+    def AnalyzeEmployeeProfile(
         self, llm_response: str, baml_options: BamlCallOptions = {},
     ) -> str:
-        result = self.__options.merge_options(baml_options).parse_response(function_name="ProcessUser", llm_response=llm_response, mode="request")
+        result = self.__options.merge_options(baml_options).parse_response(function_name="AnalyzeEmployeeProfile", llm_response=llm_response, mode="request")
+        return typing.cast(str, result)
+
+    def ExtractEmployeeProfile(
+        self, llm_response: str, baml_options: BamlCallOptions = {},
+    ) -> types.EmployeeProfile:
+        result = self.__options.merge_options(baml_options).parse_response(function_name="ExtractEmployeeProfile", llm_response=llm_response, mode="request")
+        return typing.cast(types.EmployeeProfile, result)
+
+    def InitiateEmployeeOnboarding(
+        self, llm_response: str, baml_options: BamlCallOptions = {},
+    ) -> str:
+        result = self.__options.merge_options(baml_options).parse_response(function_name="InitiateEmployeeOnboarding", llm_response=llm_response, mode="request")
         return typing.cast(str, result)
 
     
@@ -42,16 +48,22 @@ class LlmStreamParser:
     def __init__(self, options: DoNotUseDirectlyCallManager):
         self.__options = options
 
-    def ExtractUserProfile(
-        self, llm_response: str, baml_options: BamlCallOptions = {},
-    ) -> stream_types.UserProfile:
-        result = self.__options.merge_options(baml_options).parse_response(function_name="ExtractUserProfile", llm_response=llm_response, mode="stream")
-        return typing.cast(stream_types.UserProfile, result)
-
-    def ProcessUser(
+    def AnalyzeEmployeeProfile(
         self, llm_response: str, baml_options: BamlCallOptions = {},
     ) -> str:
-        result = self.__options.merge_options(baml_options).parse_response(function_name="ProcessUser", llm_response=llm_response, mode="stream")
+        result = self.__options.merge_options(baml_options).parse_response(function_name="AnalyzeEmployeeProfile", llm_response=llm_response, mode="stream")
+        return typing.cast(str, result)
+
+    def ExtractEmployeeProfile(
+        self, llm_response: str, baml_options: BamlCallOptions = {},
+    ) -> stream_types.EmployeeProfile:
+        result = self.__options.merge_options(baml_options).parse_response(function_name="ExtractEmployeeProfile", llm_response=llm_response, mode="stream")
+        return typing.cast(stream_types.EmployeeProfile, result)
+
+    def InitiateEmployeeOnboarding(
+        self, llm_response: str, baml_options: BamlCallOptions = {},
+    ) -> str:
+        result = self.__options.merge_options(baml_options).parse_response(function_name="InitiateEmployeeOnboarding", llm_response=llm_response, mode="stream")
         return typing.cast(str, result)
 
     
