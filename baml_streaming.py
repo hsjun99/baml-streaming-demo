@@ -57,7 +57,9 @@ async def track_stream(
     stream, 
     schema_class: Type[BaseModel],
     *,
-    show_progress: bool = True
+    show_progress: bool = True,
+    on_required_ready=None,
+    on_all_complete=None
 ) -> AsyncGenerator[StreamState, None]:
     """
     The one obvious way to track BAML streams.
@@ -69,8 +71,15 @@ async def track_stream(
         async for state in track_stream(stream, UserProfile):
             if state.required_ready:
                 await next_action(state.fields)
-            if show_progress:
-                print(f"Progress: {len(state.fields)} fields")
+            if state.all_complete:
+                await final_action(state.fields)
+                
+        # Or with callbacks:
+        async for state in track_stream(
+            stream, UserProfile,
+            on_required_ready=lambda fields: process_user(fields),
+            on_all_complete=lambda fields: finalize_user(fields)
+        ):
     """
     # Simple setup - no complex initialization
     required_fields = get_required_fields(schema_class)
@@ -78,6 +87,7 @@ async def track_stream(
     start_time = time.time()
     partial_count = 0
     required_notified = False
+    all_complete_notified = False
     
     # The generator pattern Raymond loves
     async for partial in stream:
@@ -92,14 +102,21 @@ async def track_stream(
         )
         if required_ready:
             required_notified = True
+            if on_required_ready:
+                await on_required_ready(current_fields)
             
         all_complete = set(current_fields.keys()) == all_fields
+        all_complete_triggered = all_complete and not all_complete_notified
+        if all_complete_triggered:
+            all_complete_notified = True
+            if on_all_complete:
+                await on_all_complete(current_fields)
         
         # Yield simple state - let the caller decide what to do
         state = StreamState(
             fields=current_fields,
             required_ready=required_ready,
-            all_complete=all_complete,
+            all_complete=all_complete_triggered,
             elapsed=elapsed,
             partial_count=partial_count
         )
@@ -126,16 +143,19 @@ def format_progress(state: StreamState, required_fields: Set[str]) -> str:
     if state.required_ready:
         header += "\n🚀 REQUIRED FIELDS READY - Fast execution triggered!"
     
+    if state.all_complete:
+        header += "\n🎉 ALL FIELDS COMPLETE - Full profile ready!"
+    
     return f"{header}\n" + "\n".join(field_summary)
 
 
 # Convenience function for common use case
-async def simple_track(stream, schema_class: Type[BaseModel], on_required_ready=None):
+async def simple_track(stream, schema_class: Type[BaseModel], on_required_ready=None, on_all_complete=None):
     """
     Even simpler API for the most common use case.
     Returns final statistics.
     """
-    stats = {"total_time": 0, "partial_count": 0, "required_ready_time": None}
+    stats = {"total_time": 0, "partial_count": 0, "required_ready_time": None, "all_complete_time": None}
     
     async for state in track_stream(stream, schema_class):
         stats["partial_count"] = state.partial_count
@@ -145,6 +165,11 @@ async def simple_track(stream, schema_class: Type[BaseModel], on_required_ready=
             stats["required_ready_time"] = state.elapsed
             if on_required_ready:
                 await on_required_ready(state.fields)
+        
+        if state.all_complete:
+            stats["all_complete_time"] = state.elapsed
+            if on_all_complete:
+                await on_all_complete(state.fields)
     
     # Calculate time savings
     if stats["required_ready_time"]:

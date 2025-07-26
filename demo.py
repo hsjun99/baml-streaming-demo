@@ -55,6 +55,13 @@ async def demo_basic_usage():
                 print(f"   ✅ ProcessUser completed: {result}")
             except Exception as e:
                 print(f"   ❌ ProcessUser failed: {e}")
+        
+        if state.all_complete:
+            # When ALL fields are ready, do final processing
+            age = state.fields.get('age')
+            premium = state.fields.get('is_premium')
+            print(f"   🎉 All fields complete! Age: {age}, Premium: {premium}")
+            print(f"   📊 Final profile: {len(state.fields)} fields total")
     
     print("✨ Demo 1 completed!")
 
@@ -72,7 +79,7 @@ async def demo_simple_api():
     she qualifies for premium access to our research database.
     """
     
-    # Define what to do when required fields are ready
+    # Define callbacks for different stages
     async def process_when_ready(fields):
         name = fields['name']
         email = fields['email']
@@ -83,9 +90,19 @@ async def demo_simple_api():
         except Exception as e:
             print(f"   ❌ Error: {e}")
     
-    # One line of code - that's it!
+    async def finalize_when_complete(fields):
+        age = fields.get('age')
+        premium = fields.get('is_premium')
+        print(f"   🎉 Profile complete! Age: {age}, Premium: {premium}")
+        print(f"   📊 Total fields extracted: {len(fields)}")
+    
+    # Even simpler with callbacks - Raymond style!
     stream = b.stream.ExtractUserProfile(user_text)
-    stats = await simple_track(stream, UserProfile, on_required_ready=process_when_ready)
+    stats = await simple_track(
+        stream, UserProfile, 
+        on_required_ready=process_when_ready,
+        on_all_complete=finalize_when_complete
+    )
     
     print("✨ Demo 2 completed!")
     return stats
