@@ -35,7 +35,7 @@ def get_required_fields(schema_class: Type[BaseModel]) -> Set[str]:
     """Extract required fields from Pydantic schema - one clear purpose"""
     return {
         name for name, field in schema_class.model_fields.items() 
-        if field.json_schema_extra and field.json_schema_extra.get('required_for_execution')
+        if field.json_schema_extra and field.json_schema_extra.get('baml_required')
     }
 
 

@@ -13,23 +13,23 @@ from pydantic import BaseModel, Field
 class UserProfile(BaseModel):
     """User profile schema with execution requirements embedded"""
     
-    # Required fields for fast execution (marked with required_for_execution=True)
+    # Required fields for fast execution (marked with baml_required=True)
     name: str = Field(
         ..., 
         description="User's full name",
-        json_schema_extra={"required_for_execution": True}
+        json_schema_extra={"baml_required": True}
     )
     
     email: str = Field(
         ..., 
         description="User's email address",
-        json_schema_extra={"required_for_execution": True}
+        json_schema_extra={"baml_required": True}
     )
     
     is_verified: bool = Field(
         ..., 
         description="Account verification status",
-        json_schema_extra={"required_for_execution": True}
+        json_schema_extra={"baml_required": True}
     )
     
     # Optional fields (can complete after fast execution)
@@ -51,15 +51,14 @@ class UserProfile(BaseModel):
 
 # Example usage:
 if __name__ == "__main__":
-    from baml_streaming_helpers import SchemaIntrospector
+    from baml_streaming import get_required_fields, get_all_fields
     
-    introspector = SchemaIntrospector()
+    print("All fields:", get_all_fields(UserProfile))
+    print("Required fields:", get_required_fields(UserProfile))
     
-    print("All fields:", introspector.get_all_field_names(UserProfile))
-    print("Required fields:", introspector.get_required_fields(UserProfile))
-    
-    for field_name in introspector.get_all_field_names(UserProfile):
-        display_name = introspector.get_field_display_name(UserProfile, field_name)
-        required = field_name in introspector.get_required_fields(UserProfile)
+    for field_name in get_all_fields(UserProfile):
+        field_info = UserProfile.model_fields.get(field_name)
+        display_name = field_info.description if field_info and field_info.description else field_name
+        required = field_name in get_required_fields(UserProfile)
         marker = "⭐" if required else "  "
         print(f"{marker} {field_name}: {display_name}")
