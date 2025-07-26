@@ -45,23 +45,23 @@ async def demo_basic_usage():
     # The Raymond Hettinger way - obvious and simple
     async for state in track_stream(stream, UserProfile):
         if state.required_ready:
-            # When required fields are ready, do the next action
-            name = state.fields['name']
-            email = state.fields['email']
-            print(f"   🚀 Starting ProcessUser({name}, {email})")
+            # Create partial UserProfile with required fields
+            partial_profile = UserProfile(**state.fields)
+            print(f"   🚀 Starting ProcessUser with partial profile: {partial_profile.name}")
             
             try:
-                result = await b.ProcessUser(name, email)
+                result = await b.ProcessUser(partial_profile.name, partial_profile.email)
                 print(f"   ✅ ProcessUser completed: {result}")
             except Exception as e:
                 print(f"   ❌ ProcessUser failed: {e}")
         
         if state.all_complete:
-            # When ALL fields are ready, do final processing
-            age = state.fields.get('age')
-            premium = state.fields.get('is_premium')
-            print(f"   🎉 All fields complete! Age: {age}, Premium: {premium}")
-            print(f"   📊 Final profile: {len(state.fields)} fields total")
+            # Create complete UserProfile with all fields
+            complete_profile = UserProfile(**state.fields)
+            print(f"   🎉 Complete profile created!")
+            print(f"   👤 {complete_profile.name}, {complete_profile.age} years old")
+            print(f"   📧 {complete_profile.email} ({'Premium' if complete_profile.is_premium else 'Standard'} user)")
+            print(f"   📝 Bio: {complete_profile.bio[:50] + '...' if complete_profile.bio else 'No bio'}")
     
     print("✨ Demo 1 completed!")
 
@@ -79,22 +79,22 @@ async def demo_simple_api():
     she qualifies for premium access to our research database.
     """
     
-    # Define callbacks for different stages
+    # Define callbacks for different stages using UserProfile entities
     async def process_when_ready(fields):
-        name = fields['name']
-        email = fields['email']
-        print(f"   🚀 Processing user: {name}")
+        partial_profile = UserProfile(**fields)
+        print(f"   🚀 Processing user profile: {partial_profile.name}")
         try:
-            result = await b.ProcessUser(name, email)
+            result = await b.ProcessUser(partial_profile.name, partial_profile.email)
             print(f"   ✅ Result: {result}")
         except Exception as e:
-            print(f"   ❌ Error: {e}")
+            print(f"   ❌ ProcessUser API call failed: {e}")
     
     async def finalize_when_ready(fields):
-        age = fields.get('age')
-        premium = fields.get('is_premium')
-        print(f"   🎉 Profile complete! Age: {age}, Premium: {premium}")
-        print(f"   📊 Total fields extracted: {len(fields)}")
+        complete_profile = UserProfile(**fields)
+        print(f"   🎉 Complete profile finalized!")
+        print(f"   👤 {complete_profile.name} ({complete_profile.age} years old)")
+        print(f"   🎖️ {'Premium' if complete_profile.is_premium else 'Standard'} user")
+        print(f"   ✅ Verified: {complete_profile.is_verified}")
     
     # Even simpler with callbacks - Raymond style!
     stream = b.stream.ExtractUserProfile(user_text)

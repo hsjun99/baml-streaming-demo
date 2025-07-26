@@ -8,6 +8,7 @@ This serves as both the data model AND the configuration for streaming behavior.
 """
 
 from pydantic import BaseModel, Field
+from typing import Optional
 
 
 class UserProfile(BaseModel):
@@ -33,18 +34,18 @@ class UserProfile(BaseModel):
     )
     
     # Optional fields (can complete after fast execution)
-    bio: str = Field(
-        ..., 
+    bio: Optional[str] = Field(
+        default=None, 
         description="User biography"
     )
     
-    age: int = Field(
-        ..., 
+    age: Optional[int] = Field(
+        default=None, 
         description="User's age"
     )
     
-    is_premium: bool = Field(
-        ..., 
+    is_premium: Optional[bool] = Field(
+        default=None, 
         description="Premium account status"
     )
 
